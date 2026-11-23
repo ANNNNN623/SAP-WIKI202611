@@ -1,0 +1,1126 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>走進企業級 AI 的真實世界：從修水管到智慧大腦 (Graph 導覽版)</title>
+  <style>
+    :root {
+      /* 韓系簡約暖調色彩 (Korean Minimalist Warm Palette) */
+      --bg-warm: #fbf9f6;
+      --card-white: #ffffff;
+      --card-subtle: #f5f1eb;
+      --card-border: #eae4db;
+      --card-border-subtle: #f0ebe2;
+      
+      --text-main: #2b2723;
+      --text-muted: #6e6760;
+      --text-light: #948b81;
+      
+      /* 低飽和度莫蘭迪 / 韓系粉彩點綴色 */
+      --k-sage: #6c8574;          /* 靜謐鼠尾草綠 (Node 1 守門員) */
+      --k-sage-bg: #f0f4f1;
+      --k-terracotta: #b86d63;    /* 暖陶紅 (Node 2 金流哨所 / 警示) */
+      --k-terracotta-bg: #faefed;
+      --k-mauve: #8b7796;         /* 暮色粉紫 (Node 3 情緒雷達) */
+      --k-mauve-bg: #f5f0f7;
+      --k-blue: #64819d;          /* 煙波粉藍 (Node 4 表格精算) */
+      --k-blue-bg: #eff4f8;
+      --k-amber: #bfa168;         /* 燕麥奶茶黃 (Node 5 大總管) */
+      --k-amber-bg: #fdf8ef;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang TC", "Noto Sans TC", "Microsoft JhengHei", Roboto, sans-serif;
+    }
+
+    body {
+      background-color: var(--bg-warm);
+      color: var(--text-main);
+      overflow: hidden;
+      height: 100vh;
+      width: 100vw;
+      display: flex;
+      flex-direction: column;
+      user-select: none;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    /* 頂部進度條 */
+    .progress-container {
+      width: 100%;
+      height: 4px;
+      background: var(--card-border-subtle);
+      position: absolute;
+      top: 0;
+      left: 0;
+      z-index: 100;
+    }
+    .progress-bar {
+      height: 100%;
+      background: linear-gradient(90deg, var(--k-blue), var(--k-sage), var(--k-amber));
+      width: 0%;
+      transition: width 0.35s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    /* 頂部互動式 Graph Minimap 導覽列 */
+    .graph-nav-bar {
+      width: 100%;
+      background: rgba(255, 255, 255, 0.85);
+      backdrop-filter: blur(8px);
+      border-bottom: 1px solid var(--card-border);
+      padding: 8px 30px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      z-index: 90;
+      overflow-x: auto;
+    }
+
+    .graph-node-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      padding: 4px 10px;
+      border-radius: 9999px;
+      font-size: 0.74rem;
+      font-weight: 600;
+      color: var(--text-light);
+      background: transparent;
+      border: 1px solid transparent;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      white-space: nowrap;
+    }
+
+    .graph-node-pill:hover {
+      background: var(--card-subtle);
+      color: var(--text-main);
+    }
+
+    .graph-node-pill.active {
+      background: var(--card-white);
+      color: var(--text-main);
+      border-color: var(--card-border);
+      box-shadow: 0 2px 8px rgba(110, 95, 80, 0.08);
+      font-weight: 700;
+    }
+
+    .graph-node-pill.active.sage { border-color: var(--k-sage); color: var(--k-sage); background: var(--k-sage-bg); }
+    .graph-node-pill.active.terracotta { border-color: var(--k-terracotta); color: var(--k-terracotta); background: var(--k-terracotta-bg); }
+    .graph-node-pill.active.mauve { border-color: var(--k-mauve); color: var(--k-mauve); background: var(--k-mauve-bg); }
+    .graph-node-pill.active.blue { border-color: var(--k-blue); color: var(--k-blue); background: var(--k-blue-bg); }
+    .graph-node-pill.active.amber { border-color: var(--k-amber); color: var(--k-amber); background: var(--k-amber-bg); }
+
+    .graph-edge-arrow {
+      color: #cfc8bd;
+      font-size: 0.68rem;
+    }
+
+    /* 簡報主視窗 */
+    .slider-viewport {
+      flex: 1;
+      position: relative;
+      overflow: hidden;
+      width: 100%;
+      height: 100%;
+    }
+
+    .slide {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      padding: 24px 50px 72px;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      opacity: 0;
+      transform: translateX(45px) scale(0.98);
+      pointer-events: none;
+      transition: all 0.42s cubic-bezier(0.2, 0.8, 0.2, 1);
+    }
+
+    .slide.active {
+      opacity: 1;
+      transform: translateX(0) scale(1);
+      pointer-events: auto;
+    }
+
+    .slide.prev {
+      opacity: 0;
+      transform: translateX(-45px) scale(0.98);
+    }
+
+    /* 內容容器 */
+    .slide-content {
+      width: 100%;
+      max-width: 1140px;
+      display: flex;
+      flex-direction: column;
+      gap: 15px;
+      animation: fadeIn 0.35s ease-out;
+    }
+
+    /* 頂部標籤 */
+    .slide-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 4px 12px;
+      border-radius: 9999px;
+      font-size: 0.78rem;
+      font-weight: 700;
+      letter-spacing: 0.04em;
+      width: fit-content;
+      background: var(--k-blue-bg);
+      border: 1px solid rgba(100, 129, 157, 0.25);
+      color: var(--k-blue);
+    }
+
+    .slide-badge.sage { background: var(--k-sage-bg); border-color: rgba(108, 133, 116, 0.3); color: var(--k-sage); }
+    .slide-badge.amber { background: var(--k-amber-bg); border-color: rgba(191, 161, 104, 0.3); color: var(--k-amber); }
+    .slide-badge.terracotta { background: var(--k-terracotta-bg); border-color: rgba(184, 109, 99, 0.3); color: var(--k-terracotta); }
+    .slide-badge.mauve { background: var(--k-mauve-bg); border-color: rgba(139, 119, 150, 0.3); color: var(--k-mauve); }
+
+    .slide-title {
+      font-size: 2.1rem;
+      font-weight: 700;
+      line-height: 1.25;
+      color: var(--text-main);
+      letter-spacing: -0.01em;
+    }
+
+    .slide-subtitle {
+      font-size: 1.02rem;
+      color: var(--text-muted);
+      margin-top: -6px;
+      line-height: 1.55;
+    }
+
+    /* 左右雙欄佈局 (圖文伴讀) */
+    .layout-split {
+      display: grid;
+      grid-template-columns: 1fr 300px;
+      gap: 20px;
+      align-items: stretch;
+      margin-top: 2px;
+    }
+
+    /* 倉鼠助教便簽卡片 (Hamster Companion Card) */
+    .hamster-aside {
+      background: var(--card-white);
+      border: 1px solid var(--card-border);
+      border-radius: 20px;
+      padding: 18px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      text-align: center;
+      gap: 10px;
+      box-shadow: 0 4px 18px -2px rgba(110, 95, 80, 0.05);
+    }
+
+    .hamster-img-frame {
+      width: 120px;
+      height: 120px;
+      border-radius: 50%;
+      background: var(--card-subtle);
+      border: 3px solid #ffffff;
+      box-shadow: 0 4px 12px rgba(110, 95, 80, 0.12);
+      overflow: hidden;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+    }
+
+    .hamster-img-frame img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      display: block;
+    }
+
+    .hamster-tag {
+      font-size: 0.75rem;
+      font-weight: 700;
+      color: var(--k-amber);
+      background: var(--k-amber-bg);
+      padding: 3px 10px;
+      border-radius: 9999px;
+      letter-spacing: 0.04em;
+    }
+
+    .hamster-speech {
+      font-size: 0.86rem;
+      color: var(--text-muted);
+      line-height: 1.6;
+      background: var(--card-subtle);
+      padding: 12px 14px;
+      border-radius: 14px;
+      position: relative;
+      text-align: left;
+      border: 1px solid var(--card-border-subtle);
+      width: 100%;
+    }
+
+    /* 卡片與網格 */
+    .card-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(230px, 1fr));
+      gap: 14px;
+    }
+
+    .card {
+      background: var(--card-white);
+      border: 1px solid var(--card-border);
+      border-radius: 18px;
+      padding: 16px 18px;
+      box-shadow: 0 4px 16px -2px rgba(110, 95, 80, 0.04);
+      display: flex;
+      flex-direction: column;
+      gap: 5px;
+      transition: transform 0.2s ease, border-color 0.2s ease;
+    }
+
+    .card:hover {
+      transform: translateY(-2px);
+      border-color: #d1c7ba;
+    }
+
+    .card h3 {
+      font-size: 1.02rem;
+      font-weight: 700;
+      color: var(--text-main);
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .card p {
+      font-size: 0.88rem;
+      color: var(--text-muted);
+      line-height: 1.55;
+    }
+
+    /* 對比盒 */
+    .compare-container {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 14px;
+    }
+
+    .compare-box {
+      background: var(--card-white);
+      border: 1px solid var(--card-border);
+      border-radius: 18px;
+      padding: 16px 18px;
+      box-shadow: 0 4px 16px -2px rgba(110, 95, 80, 0.04);
+    }
+
+    .compare-box.bad {
+      background: #fdfbfb;
+      border-color: #eddcd8;
+    }
+
+    .compare-box.good {
+      background: #fbfdfb;
+      border-color: #dce7df;
+    }
+
+    .compare-tag {
+      display: inline-block;
+      font-size: 0.72rem;
+      font-weight: 700;
+      padding: 3px 8px;
+      border-radius: 6px;
+      margin-bottom: 8px;
+    }
+    .compare-box.bad .compare-tag { background: var(--k-terracotta-bg); color: var(--k-terracotta); }
+    .compare-box.good .compare-tag { background: var(--k-sage-bg); color: var(--k-sage); }
+
+    /* 醒目小提示 (溫暖米白灰底) */
+    .warm-tip {
+      background: var(--card-subtle);
+      border-left: 3px solid var(--k-blue);
+      padding: 9px 13px;
+      border-radius: 0 12px 12px 0;
+      font-size: 0.86rem;
+      color: var(--text-muted);
+      line-height: 1.55;
+    }
+    .warm-tip strong { color: var(--text-main); }
+
+    /* 數據展示小方塊 */
+    .stat-row {
+      display: flex;
+      gap: 10px;
+      margin-top: 2px;
+    }
+    .stat-pill {
+      flex: 1;
+      background: var(--card-white);
+      border: 1px solid var(--card-border);
+      border-radius: 14px;
+      padding: 10px;
+      text-align: center;
+      box-shadow: 0 2px 10px rgba(110, 95, 80, 0.03);
+    }
+    .stat-val {
+      font-size: 1.75rem;
+      font-weight: 800;
+      color: var(--k-blue);
+      letter-spacing: -0.02em;
+    }
+    .stat-val.sage { color: var(--k-sage); }
+    .stat-val.amber { color: var(--k-amber); }
+    .stat-val.terracotta { color: var(--k-terracotta); }
+    .stat-val.mauve { color: var(--k-mauve); }
+    .stat-lbl {
+      font-size: 0.76rem;
+      color: var(--text-light);
+      margin-top: 2px;
+      font-weight: 500;
+    }
+
+    /* 底部控制列 */
+    .controls {
+      position: absolute;
+      bottom: 14px;
+      left: 0;
+      width: 100%;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 0 50px;
+      z-index: 50;
+    }
+
+    .nav-btn {
+      background: var(--card-white);
+      color: var(--text-main);
+      border: 1px solid var(--card-border);
+      border-radius: 9999px;
+      padding: 7px 18px;
+      font-size: 0.88rem;
+      font-weight: 600;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      box-shadow: 0 2px 8px rgba(110, 95, 80, 0.06);
+      transition: all 0.2s ease;
+    }
+
+    .nav-btn:hover:not(:disabled) {
+      background: var(--card-subtle);
+      border-color: #d8d0c4;
+      color: var(--k-blue);
+    }
+
+    .nav-btn:disabled {
+      opacity: 0.35;
+      cursor: not-allowed;
+      box-shadow: none;
+    }
+
+    .dots-container {
+      display: flex;
+      gap: 7px;
+    }
+
+    .dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: #ddd7cd;
+      cursor: pointer;
+      transition: all 0.25s ease;
+    }
+
+    .dot.active {
+      background: var(--k-blue);
+      width: 22px;
+      border-radius: 6px;
+    }
+
+    .slide-counter {
+      font-size: 0.85rem;
+      color: var(--text-light);
+      font-weight: 600;
+      letter-spacing: 0.05em;
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(6px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- 頂部進度條 -->
+  <div class="progress-container">
+    <div class="progress-bar" id="progressBar"></div>
+  </div>
+
+  <!-- 頂部互動式 Graph Minimap 導覽列 -->
+  <div class="graph-nav-bar" id="graphNavBar">
+    <span class="graph-node-pill active" onclick="goToSlide(0)">🗺️ 全景地圖</span>
+    <span class="graph-edge-arrow">➔</span>
+    <span class="graph-node-pill" onclick="goToSlide(1)">🏢 ERP 地基</span>
+    <span class="graph-edge-arrow">➔</span>
+    <span class="graph-node-pill sage" onclick="goToSlide(2)">🌲 1. 配置守門</span>
+    <span class="graph-edge-arrow">➔</span>
+    <span class="graph-node-pill terracotta" onclick="goToSlide(3)">🛡️ 2. 金流哨所</span>
+    <span class="graph-edge-arrow">➔</span>
+    <span class="graph-node-pill" onclick="goToSlide(4)">🚑 3. 上線高護</span>
+    <span class="graph-edge-arrow">➔</span>
+    <span class="graph-node-pill mauve" onclick="goToSlide(5)">📡 3. 情緒雷達</span>
+    <span class="graph-edge-arrow">➔</span>
+    <span class="graph-node-pill" onclick="goToSlide(6)">⚠️ 4. 表格赤字</span>
+    <span class="graph-edge-arrow">➔</span>
+    <span class="graph-node-pill blue" onclick="goToSlide(7)">🧮 4. 矩陣大腦</span>
+    <span class="graph-edge-arrow">➔</span>
+    <span class="graph-node-pill amber" onclick="goToSlide(8)">👑 5. Joule 總管</span>
+    <span class="graph-edge-arrow">➔</span>
+    <span class="graph-node-pill" onclick="goToSlide(9)">🌟 五大金剛</span>
+  </div>
+
+  <!-- 投影片容器 -->
+  <div class="slider-viewport" id="slider">
+
+    <!-- SLIDE 1: 起點站・全景地圖展開 (S__17039362 揮手鼠) -->
+    <div class="slide active">
+      <div class="slide-content">
+        <span class="slide-badge">🌿 Graph 導覽第 1 站・全景地圖展開</span>
+        <h1 class="slide-title" style="font-size: 2.5rem;">
+          走進企業級 AI 的真實世界
+        </h1>
+        <p class="slide-subtitle" style="font-size: 1.12rem;">
+          從「修水管」到「智慧大腦」：5 篇頂級論文串聯起的商業系統神經網絡
+        </p>
+
+        <div class="layout-split">
+          <div class="card-grid" style="grid-template-columns: 1fr;">
+            <div class="card">
+              <h3>⚡ 為什麼不能只靠一個 ChatGPT？</h3>
+              <p>通用大模型能聊天寫詩，但面對企業數十億金流與百萬貨品時，它容易產生數字幻覺，在表格預測任務上甚至大跌 50% 準確率！</p>
+            </div>
+            <div class="card">
+              <h3>🗺️ 今天的 Graph 探險路線</h3>
+              <p>大公司不是靠單一模型單打獨鬥，而是沿著業務資料流，建立了一條嚴密的<strong>「防禦與決策管線（Pipeline Graph）」</strong>！</p>
+            </div>
+            <div class="card">
+              <h3>🛡️ 5 大節點即將逐一解鎖</h3>
+              <p>從配置開關排查 ➔ 500ms 即時防盜刷 ➔ 員工情緒監測 ➔ 96% 表格預測 ➔ 自然語言總管，一起通關！</p>
+            </div>
+          </div>
+
+          <!-- 倉鼠助教便簽 (S__17039362 揮手鼠) -->
+          <div class="hamster-aside">
+            <div class="hamster-img-frame">
+              <img src="../../倉鼠/S__17039362.jpg" alt="倉鼠助教揮手">
+            </div>
+            <span class="hamster-tag">🐹 倉鼠助教・薯泥</span>
+            <div class="hamster-speech">
+              <strong>哈囉！我是倉鼠助教・薯泥～</strong><br>
+              今天不講複雜數學公式，我帶著這張全景系統地圖，陪你一站一站看懂大公司的 AI 神經網絡是怎麼運作的！
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- SLIDE 2: 地基檢驗 —— 什麼是 ERP？ (S__17039363 認真鼠) -->
+    <div class="slide">
+      <div class="slide-content">
+        <span class="slide-badge amber">🏢 Graph 核心地基・什麼是 ERP？</span>
+        <h2 class="slide-title">大公司的數位中樞：脆弱的百萬開關</h2>
+        <p class="slide-subtitle">如果一間跨國公司是人體，ERP 就是掌控一切的神經網絡與器官血管。</p>
+
+        <div class="layout-split">
+          <div style="display: flex; flex-direction: column; gap: 14px;">
+            <div class="compare-container">
+              <div class="compare-box">
+                <span class="compare-tag" style="background: var(--k-blue-bg); color: var(--k-blue);">日常運作的脈搏</span>
+                <h3 style="font-size: 1rem; margin-bottom: 6px;">掌管企業核心動脈</h3>
+                <p style="font-size: 0.88rem; color: var(--text-muted); line-height: 1.6;">
+                  以全球龍頭 <strong>SAP</strong> 為例，它同時控制著：
+                  <br>• <strong>財務 (FI)</strong>：每一筆交易進出與合規審計
+                  <br>• <strong>延伸倉儲 (EWM)</strong>：幾十萬個貨架上的商品分揀
+                  <br>• <strong>核心銀行帳戶</strong>：數百萬用戶的即時轉帳授權
+                </p>
+              </div>
+
+              <div class="compare-box bad">
+                <span class="compare-tag">致命脆弱點</span>
+                <h3 style="font-size: 1rem; margin-bottom: 6px;">百萬參數的地雷陣</h3>
+                <p style="font-size: 0.88rem; color: var(--text-muted); line-height: 1.6;">
+                  整個系統擁有<strong>數百萬個配置開關</strong>。
+                  <br>可怕的是：<strong>A 開關合法，B 開關也合法，但「A 和 B 同時打開」就會引發邏輯衝突！</strong>
+                  <br>傳統靠人工拿眼睛審視幾萬張表格，根本抓不勝抓。
+                </p>
+              </div>
+            </div>
+
+            <div class="warm-tip">
+              💡 <strong>權威調查數據：</strong>高達 20%~50% 的企業大規模停擺，不是代碼寫壞了，而是「開關配錯了」（配置錯誤）！
+            </div>
+          </div>
+
+          <!-- 倉鼠助教便簽 (S__17039363 認真鼠) -->
+          <div class="hamster-aside">
+            <div class="hamster-img-frame">
+              <img src="../../倉鼠/S__17039363.jpg" alt="倉鼠助教認真">
+            </div>
+            <span class="hamster-tag">🐹 巡檢員薯泥</span>
+            <div class="hamster-speech">
+              <strong>牽一髮而動全身！</strong><br>
+              別看大公司平時很威風，系統其實是由幾百萬個開關拼成的積木，只要抽錯一塊，整棟大樓都會劇烈搖晃喔！
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- SLIDE 3: Node 1・守門人 (Jagadhabi 2026 - 隨機森林) (S__17039364 雙手合十檢驗鼠) -->
+    <div class="slide">
+      <div class="slide-content">
+        <span class="slide-badge sage">🌲 Node 1・配置守門人・Jagadhabi (2026)</span>
+        <h2 class="slide-title">AI「找碴大師」：抓出跨模組衝突開關</h2>
+        <p class="slide-subtitle">《Machine Learning Approaches for Detecting Configuration Errors in SAP Systems》</p>
+
+        <div class="layout-split">
+          <div style="display: flex; flex-direction: column; gap: 12px;">
+            <div class="card-grid">
+              <div class="card">
+                <h3>🌲 為什麼選「隨機森林」？</h3>
+                <p>一條一條的規則太死板。隨機森林就像請了 <strong>200 位經驗老道的倉鼠師傅組成陪審團</strong>，每個人隨機考察一部分開關，最後綜合投票，最擅長抓出非線性矛盾！</p>
+              </div>
+              <div class="card">
+                <h3>🎯 實證：93% 超高準確率</h3>
+                <p>在 8,000 筆真實企業參數測試中拿下最高分！遠勝過單一決策樹 (89%) 與支持向量機 (90%)，成功揪出藏在深處的衝突開關。</p>
+              </div>
+            </div>
+
+            <div class="stat-row">
+              <div class="stat-pill">
+                <div class="stat-val sage">93%</div>
+                <div class="stat-lbl">隨機森林檢測準確率</div>
+              </div>
+              <div class="stat-pill">
+                <div class="stat-val">8,000</div>
+                <div class="stat-lbl">真實參數驗證樣本數</div>
+              </div>
+              <div class="stat-pill">
+                <div class="stat-val amber">&lt; 0.2 vs &gt; 0.6</div>
+                <div class="stat-lbl">正常 vs 異常機率明顯分離</div>
+              </div>
+            </div>
+          </div>
+
+          <!-- 倉鼠助教便簽 (S__17039364 雙手合十檢驗鼠) -->
+          <div class="hamster-aside">
+            <div class="hamster-img-frame">
+              <img src="../../倉鼠/S__17039364.jpg" alt="倉鼠助教認真檢驗">
+            </div>
+            <span class="hamster-tag">🐹 陪審團薯泥</span>
+            <div class="hamster-speech">
+              <strong>集體智慧力量大！</strong><br>
+              單一工程師可能會看走眼，但 200 隻倉鼠師傅共同投票，壞開關的分數立刻飆高到 0.8，一眼就能現形！
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- SLIDE 4: Node 2・裝甲哨所 (Gopinathan 2024 - 金融零信任風控) (S__17039372 伏地戒備守衛鼠) -->
+    <div class="slide">
+      <div class="slide-content">
+        <span class="slide-badge terracotta">🛡️ Node 2・金流哨所・Gopinathan (2024)</span>
+        <h2 class="slide-title">金融防盜刷：500 毫秒生死時速與零信任裝甲</h2>
+        <p class="slide-subtitle">《Real-Time Financial Risk Intelligence Using Secure-by-Design AI in SAP Digital Banking》</p>
+
+        <div class="layout-split">
+          <div style="display: flex; flex-direction: column; gap: 12px;">
+            <div class="card-grid">
+              <div class="card">
+                <h3>💳 告別「隔天早晨才知道被盜刷」</h3>
+                <p>傳統銀行是「夜間批次對帳（T+1）」，等清晨發簡訊給你，錢早被海外洗錢管道提光。新架構要求：<strong>在你在收銀台刷卡、按下確認的瞬間（In-flight），AI 就必須秒級完成判斷！</strong></p>
+              </div>
+              <div class="card">
+                <h3>🛡️ 坐在「零信任防彈車」裡的 AI</h3>
+                <p>金融資料關乎身家財產，安全絕不能事後加裝：<br>
+                • <strong>零信任 (Zero Trust)</strong>：內部所有微服務互相不信任，強制每次核驗數位身分（mTLS）。<br>
+                • <strong>全鏈路加密</strong>：資料跑動與儲存時全面上鎖，嚴格符合 PCI DSS / GDPR。</p>
+              </div>
+            </div>
+
+            <div class="stat-row">
+              <div class="stat-pill">
+                <div class="stat-val terracotta">&lt; 500 ms</div>
+                <div class="stat-lbl">端到端極速風控延遲</div>
+              </div>
+              <div class="stat-pill">
+                <div class="stat-val">Zero Trust</div>
+                <div class="stat-lbl">全鏈路雙向認證與原生安全</div>
+              </div>
+              <div class="stat-pill">
+                <div class="stat-val amber">BiLSTM</div>
+                <div class="stat-lbl">雙向時序深度學習預測引擎</div>
+              </div>
+            </div>
+          </div>
+
+          <!-- 倉鼠助教便簽 (S__17039372 伏地戒備守衛鼠) -->
+          <div class="hamster-aside">
+            <div class="hamster-img-frame">
+              <img src="../../倉鼠/S__17039372.jpg" alt="倉鼠助教伏地戒備">
+            </div>
+            <span class="hamster-tag">🐹 貼身保鑣薯泥</span>
+            <div class="hamster-speech">
+              <strong>滴答滴答，只給 0.5 秒！</strong><br>
+              開關配好了，錢刷進來了！當你在櫃檯按確認的 0.5 秒內，我已經坐在防彈車裡把盜刷犯擋在門外啦！
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- SLIDE 5: Node 3・重症監護室 (Yadavalli 2024 前半) (S__17039371 探頭緊張鼠) -->
+    <div class="slide">
+      <div class="slide-content">
+        <span class="slide-badge">🚑 Node 3・維運重症監護・Yadavalli (2024)</span>
+        <h2 class="slide-title">新系統上線的「ICU 重症監護期」</h2>
+        <p class="slide-subtitle">《Hypercare Signal Fusion for Early Instability Detection in SAP S/4HANA & EWM》</p>
+
+        <div class="layout-split">
+          <div style="display: flex; flex-direction: column; gap: 14px;">
+            <div class="card-grid">
+              <div class="card">
+                <h3>🚑 什麼是 Hypercare（高護期）？</h3>
+                <p>企業花費上億元換新系統上線的<strong>前 6 週</strong>，就像剛動完大手術的病患，任何微小的排斥反應都可能引發多重器官衰竭。</p>
+              </div>
+              <div class="card">
+                <h3>📦 倉儲 (EWM) 的驚魂 3 秒鐘</h3>
+                <p>在自動化倉庫裡，幾百位工人拿掃描槍刷條碼。如果系統慢了 3 秒，手持設備斷線，出貨波次大塞車，不出半天，整個港口和倉庫全部堵死！</p>
+              </div>
+            </div>
+
+            <div class="compare-container">
+              <div class="compare-box bad">
+                <span class="compare-tag">傳統模式：被動救火 (Reactive)</span>
+                <p style="font-size: 0.86rem; color: var(--text-muted); line-height: 1.55;">
+                  伺服器團隊看 CPU（以為很正常）；倉庫主管急得跳腳；直到使用者打電話投訴，大家才手忙腳亂開會調查（此時已損失數百萬）。
+                </p>
+              </div>
+              <div class="compare-box good">
+                <span class="compare-tag">HSF 模式：主動預警 (Proactive)</span>
+                <p style="font-size: 0.86rem; color: var(--text-muted); line-height: 1.55;">
+                  捕捉各系統間微弱的聯動異象，在全面爆發前數小時提前發出修復清單，把火苗扼殺在搖籃裡！
+                </p>
+              </div>
+            </div>
+          </div>
+
+          <!-- 倉鼠助教便簽 (S__17039371 探頭緊張鼠) -->
+          <div class="hamster-aside">
+            <div class="hamster-img-frame">
+              <img src="../../倉鼠/S__17039371.jpg" alt="倉鼠助教探頭緊張">
+            </div>
+            <span class="hamster-tag">🐹 加護病房薯泥</span>
+            <div class="hamster-speech">
+              <strong>好緊張啊！</strong><br>
+              金流順暢了，但大促銷一來，倉庫每秒都在刷條碼！只要卡住 3 秒鐘，整座港口的貨車都會排到馬路上！
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- SLIDE 6: Node 3 深度・雷達站 (Yadavalli 2024 後半) (S__17039370 鼓腮幫子激動鼠) -->
+    <div class="slide">
+      <div class="slide-content">
+        <span class="slide-badge mauve">📡 Node 3 深度・情緒雷達站・Yadavalli (2024)</span>
+        <h2 class="slide-title">讀心術雷達：把「打工人的抱怨」變成第一預警</h2>
+        <p class="slide-subtitle">傳統 AIOps 只看機器數據，HSF 卻發現：最靈敏的傳感器其實是「人」！</p>
+
+        <div class="layout-split">
+          <div style="display: flex; flex-direction: column; gap: 12px;">
+            <div class="card-grid">
+              <div class="card">
+                <h3>💬 情緒往往比儀表板早 2 小時崩潰</h3>
+                <p>系統徹底癱瘓前，員工聊天群組裡早就充滿了<em>「怎麼又轉圈圈？」、「條碼刷不出來！」</em>等焦慮語句。論文用 <strong>BERT 語言模型</strong>，自動算出即時情緒負面指數！</p>
+              </div>
+              <div class="card">
+                <h3>🔀 六大訊號的「天羅地網」融合</h3>
+                <p><strong>單看記憶體</strong>：微幅上升（像正常抖動）。<br>
+                <strong>但若同時發現</strong>：手持設備丟包率增加 + 戰情室聊天負面情緒激增！<br>
+                👉 AI 立刻認定：<strong>這不是正常波動，而是即將爆發的大崩潰！</strong></p>
+              </div>
+            </div>
+
+            <div class="stat-row">
+              <div class="stat-pill">
+                <div class="stat-val terracotta">0.48</div>
+                <div class="stat-lbl">傳統靜態閾值 F1 分數</div>
+              </div>
+              <div class="stat-pill">
+                <div class="stat-val amber">0.68</div>
+                <div class="stat-lbl">單一神經網絡 (LSTM) 分數</div>
+              </div>
+              <div class="stat-pill">
+                <div class="stat-val mauve">0.81</div>
+                <div class="stat-lbl">多源訊號與情緒融合 (+68%)</div>
+              </div>
+            </div>
+          </div>
+
+          <!-- 倉鼠助教便簽 (S__17039370 鼓腮幫子激動鼠) -->
+          <div class="hamster-aside">
+            <div class="hamster-img-frame">
+              <img src="../../倉鼠/S__17039370.jpg" alt="倉鼠助教激動抱怨">
+            </div>
+            <span class="hamster-tag">🐹 氣噗噗薯泥</span>
+            <div class="hamster-speech">
+              <strong>打工鼠的怨念很靈！</strong><br>
+              伺服器死機前，人類的抱怨就是最強警報器。把聊天室字眼算成情緒分數，系統就能提早 2 小時抓出問題！
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- SLIDE 7: Node 4・數值精算師 (Narne 2024 前半) (S__17039366 目瞪口呆震驚鼠) -->
+    <div class="slide">
+      <div class="slide-content">
+        <span class="slide-badge terracotta">⚠️ Node 4・表格赤字・Narne (2024)</span>
+        <h2 class="slide-title">大模型的世紀尷尬：算表格居然大跌 50%？</h2>
+        <p class="slide-subtitle">《Generative Artificial Intelligence Device for SAP based Data Management》</p>
+
+        <div class="layout-split">
+          <div style="display: flex; flex-direction: column; gap: 14px;">
+            <div class="compare-container">
+              <div class="compare-box bad">
+                <span class="compare-tag">⚠️ 殘酷現實：通用 LLM 的表格赤字</span>
+                <h3 style="color: var(--k-terracotta); font-size: 1.05rem; margin-bottom: 6px;">比傳統演算法落後 20% ~ 50%！</h3>
+                <p style="font-size: 0.88rem; color: var(--text-muted); line-height: 1.6;">
+                  通用大模型（如 GPT-4）寫文章超強，但遇到 ERP 裡的 Excel 表格數據時：
+                  <br>1. <strong>數值被打碎</strong>：小數點、大數字被切成不相干的碎片符號。
+                  <br>2. <strong>方向順序偏見</strong>：模型習慣從左到右讀字，但表格的行與列排法應該是對稱的。
+                  <br>3. <strong>嚴重的數值幻覺</strong>：給出看似合理、實則瞎編的庫存數字！
+                </p>
+              </div>
+
+              <div class="compare-box good">
+                <span class="compare-tag">💡 問題本質：術業有專攻</span>
+                <h3 style="color: var(--k-blue); font-size: 1.05rem; margin-bottom: 6px;">文字是大腦，但表格需要計算器</h3>
+                <p style="font-size: 0.88rem; color: var(--text-muted); line-height: 1.6;">
+                  老闆要預測下季度的產品銷量與物料需求，如果只依賴文字型 LLM，很容易因為小數點跑位造成數百萬庫存積壓。
+                  <br>企業需要專門針對<strong>二維表格矩陣</strong>打造的全新基礎模型！
+                </p>
+              </div>
+            </div>
+
+            <div class="warm-tip">
+              🎯 <strong>初學者重要啟發：</strong>不要迷信「通用大模型能解決一切」！在企業核心數據裡，「文字歸語言模型，表格歸專用基礎模型」才是頂尖架構思維。
+            </div>
+          </div>
+
+          <!-- 倉鼠助教便簽 (S__17039366 目瞪口呆震驚鼠) -->
+          <div class="hamster-aside">
+            <div class="hamster-img-frame">
+              <img src="../../倉鼠/S__17039366.jpg" alt="倉鼠助教震驚">
+            </div>
+            <span class="hamster-tag">🐹 目瞪口呆薯泥</span>
+            <div class="hamster-speech">
+              <strong>什麼？！居然算輸了！</strong><br>
+              名滿天下的 ChatGPT，碰到嚴謹的財務表格居然會算錯！這不是大模型不聰明，而是它本來就是為寫文章設計的啦！
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- SLIDE 8: Node 4 破局・矩陣大腦 (Narne 2024 後半) (S__17039365 滿足嚼點心鼠) -->
+    <div class="slide">
+      <div class="slide-content">
+        <span class="slide-badge blue">🧮 Node 4・矩陣大腦破局・Narne (2024)</span>
+        <h2 class="slide-title">表格式原生基礎模型：96% 精準預測救星</h2>
+        <p class="slide-subtitle">專為結構化表格矩陣而生的 Foundation Model，徹底解決數值預測痛點</p>
+
+        <div class="layout-split">
+          <div style="display: flex; flex-direction: column; gap: 14px;">
+            <div class="card-grid">
+              <div class="card">
+                <h3>🚀 零訓練即用 (Zero-Shot)</h3>
+                <p>不用像傳統機器學習每次更換表格都要耗時數天重新訓練。預先學習了海量數學規律，新表格丟進去立刻秒輸出結果！</p>
+              </div>
+              <div class="card">
+                <h3>📈 越龐大越準：突破 96%</h3>
+                <p>傳統方法在 75% 準確率就遇到天花板；而表格式基礎模型隨著數據量增加（100MB 至 10GB），準確率從 88% 一路飆升至 <strong>96%</strong>！</p>
+              </div>
+            </div>
+
+            <div class="stat-row">
+              <div class="stat-pill">
+                <div class="stat-val blue">96%</div>
+                <div class="stat-lbl">大數據量下最終預測精度</div>
+              </div>
+              <div class="stat-pill">
+                <div class="stat-val sage">0.2 秒</div>
+                <div class="stat-lbl">推論響應延遲 (120~240ms)</div>
+              </div>
+              <div class="stat-pill">
+                <div class="stat-val amber">8,500+</div>
+                <div class="stat-lbl">每秒吞吐處理記錄數</div>
+              </div>
+            </div>
+          </div>
+
+          <!-- 倉鼠助教便簽 (S__17039365 滿足嚼點心鼠) -->
+          <div class="hamster-aside">
+            <div class="hamster-img-frame">
+              <img src="../../倉鼠/S__17039365.jpg" alt="倉鼠助教滿足嚼點心">
+            </div>
+            <span class="hamster-tag">🐹 飽食精算薯泥</span>
+            <div class="hamster-speech">
+              <strong>吃對飼料才會胖！</strong><br>
+              給表格專屬的營養與架構，AI 就能在 0.2 秒內算出 96% 的超強預測，這才是真正的商業精算師！
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- SLIDE 9: Node 5・指揮總部 (Sharma et al. 2025) (S__17039367 仰望未來希望鼠) -->
+    <div class="slide">
+      <div class="slide-content">
+        <span class="slide-badge amber">👑 Node 5・指揮總部・Sharma et al. (2025)</span>
+        <h2 class="slide-title">動動嘴巴管公司的「Joule」與自治企業</h2>
+        <p class="slide-subtitle">《The Convergence of Intelligent Systems and SAP Solutions: Shaping the Future of ERP》</p>
+
+        <div class="layout-split">
+          <div style="display: flex; flex-direction: column; gap: 14px;">
+            <div class="card-grid">
+              <div class="card">
+                <h3>🤖 SAP Joule：鋼鐵人的管家賈維斯</h3>
+                <p>2023 年秋發布的生成式助理。過去查庫存要輸入反人類的代碼（如 <code>MM03</code>、<code>VA01</code>），現在只需在螢幕上說：<br>
+                <em>「幫我看看哪條生產線下週可能因缺料停產？」</em><br>
+                Joule 自動穿梭數萬張表格，把答案直接用人話回報給主管！</p>
+              </div>
+              <div class="card">
+                <h3>⚖️ 人類參與迴路 (Human-in-the-Loop)</h3>
+                <p>AI 再聰明，也不能讓它私自把一千萬美金轉出海外。重要合約審批與高危險參數修改，AI 負責給出分析與排序，<strong>最後蓋章確認的永遠必須是人類管理員</strong>！</p>
+              </div>
+            </div>
+
+            <div class="warm-tip">
+              🚀 <strong>智慧企業的三個地平線：</strong>打好數位地基 (S/4HANA) $\to$ 自動化工具人 (RPA 代勞貼發票) $\to$ 自治企業 (供應鏈自動調度)。
+            </div>
+          </div>
+
+          <!-- 倉鼠助教便簽 (S__17039367 仰望未來希望鼠) -->
+          <div class="hamster-aside">
+            <div class="hamster-img-frame">
+              <img src="../../倉鼠/S__17039367.jpg" alt="倉鼠助教仰望未來">
+            </div>
+            <span class="hamster-tag">🐹 總指揮薯泥</span>
+            <div class="hamster-speech">
+              <strong>大管家來啦！</strong><br>
+              前面所有守門員、哨所、雷達、精算師都各就各位了，現在只要跟大總管 Joule 講一句話，它就能協調全場！
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- SLIDE 10: 終點站・全景 Graph 復盤 (S__17039362 歡呼結業鼠) -->
+    <div class="slide">
+      <div class="slide-content">
+        <span class="slide-badge">🌟 Graph 終點站・全景復盤</span>
+        <h2 class="slide-title">總結：企業級 AI 的「五大金剛」協同戰隊</h2>
+        <p class="slide-subtitle">掌握了這 5 篇論文，你就掌握了全球頂尖企業落地 AI 的完整技術拼圖！</p>
+
+        <div class="layout-split">
+          <div style="display: flex; flex-direction: column; gap: 14px;">
+            <div class="card-grid" style="grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap: 10px;">
+              <div class="card" style="border-top: 3px solid var(--k-sage); padding: 12px;">
+                <div style="font-size: 1.2rem;">🌲</div>
+                <h4 style="font-size: 0.88rem;">隨機森林</h4>
+                <div style="font-size: 0.72rem; color: var(--k-sage); font-weight: 700;">【守門員】</div>
+                <p style="font-size: 0.76rem; color: var(--text-muted);">抓出開關衝突地雷</p>
+              </div>
+              <div class="card" style="border-top: 3px solid var(--k-terracotta); padding: 12px;">
+                <div style="font-size: 1.2rem;">🛡️</div>
+                <h4 style="font-size: 0.88rem;">零信任風控</h4>
+                <div style="font-size: 0.72rem; color: var(--k-terracotta); font-weight: 700;">【裝甲哨所】</div>
+                <p style="font-size: 0.76rem; color: var(--text-muted);">0.5 秒防盜鎖死金流</p>
+              </div>
+              <div class="card" style="border-top: 3px solid var(--k-mauve); padding: 12px;">
+                <div style="font-size: 1.2rem;">📡</div>
+                <h4 style="font-size: 0.88rem;">訊號情緒融合</h4>
+                <div style="font-size: 0.72rem; color: var(--k-mauve); font-weight: 700;">【全景雷達】</div>
+                <p style="font-size: 0.76rem; color: var(--text-muted);">感應員工抱怨情緒</p>
+              </div>
+              <div class="card" style="border-top: 3px solid var(--k-blue); padding: 12px;">
+                <div style="font-size: 1.2rem;">🧮</div>
+                <h4 style="font-size: 0.88rem;">表格式模型</h4>
+                <div style="font-size: 0.72rem; color: var(--k-blue); font-weight: 700;">【數值精算師】</div>
+                <p style="font-size: 0.76rem; color: var(--text-muted);">96% 數值表格預測</p>
+              </div>
+              <div class="card" style="border-top: 3px solid var(--k-amber); padding: 12px;">
+                <div style="font-size: 1.2rem;">👑</div>
+                <h4 style="font-size: 0.88rem;">Joule 大模型</h4>
+                <div style="font-size: 0.72rem; color: var(--k-amber); font-weight: 700;">【大總管】</div>
+                <p style="font-size: 0.76rem; color: var(--text-muted);">用人話協調並做匯報</p>
+              </div>
+            </div>
+
+            <div class="warm-tip" style="text-align: center; border-left: none; border: 1px solid var(--card-border); background: var(--card-white);">
+              🌱 <strong>結論：未來不是單一大模型打天下，而是「各司其職、互相串聯」的自主企業系統 (Autonomous Enterprise)！</strong>
+            </div>
+          </div>
+
+          <!-- 倉鼠助教便簽 (S__17039362 歡呼結業鼠) -->
+          <div class="hamster-aside">
+            <div class="hamster-img-frame">
+              <img src="../../倉鼠/S__17039362.jpg" alt="倉鼠助教揮手慶祝">
+            </div>
+            <span class="hamster-tag">🐹 結業啦！薯泥</span>
+            <div class="hamster-speech">
+              <strong>探險大成功！🎓</strong><br>
+              恭喜你完成了這趟 Graph 神經網絡之旅！你現在已經掌握了全球 500 強企業落地 AI 的五大核心支柱囉！
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- 底部導覽控制列 -->
+  <div class="controls">
+    <button class="nav-btn" id="prevBtn" onclick="prevSlide()">
+      <span>←</span> 上一站
+    </button>
+
+    <div class="dots-container" id="dotsContainer"></div>
+
+    <div style="display: flex; align-items: center; gap: 14px;">
+      <span class="slide-counter" id="slideCounter">1 / 10</span>
+      <button class="nav-btn" id="nextBtn" onclick="nextSlide()">
+        下一站 <span>→</span>
+      </button>
+    </div>
+  </div>
+
+  <script>
+    const slides = document.querySelectorAll('.slide');
+    const dotsContainer = document.getElementById('dotsContainer');
+    const progressBar = document.getElementById('progressBar');
+    const slideCounter = document.getElementById('slideCounter');
+    const prevBtn = document.getElementById('prevBtn');
+    const nextBtn = document.getElementById('nextBtn');
+    const navPills = document.querySelectorAll('.graph-node-pill');
+    let currentSlide = 0;
+    const totalSlides = slides.length;
+
+    // 建立導航點點
+    slides.forEach((_, idx) => {
+      const dot = document.createElement('div');
+      dot.classList.add('dot');
+      if (idx === 0) dot.classList.add('active');
+      dot.addEventListener('click', () => goToSlide(idx));
+      dotsContainer.appendChild(dot);
+    });
+
+    const dots = document.querySelectorAll('.dot');
+
+    function updateSlide() {
+      slides.forEach((slide, idx) => {
+        slide.classList.remove('active', 'prev');
+        if (idx === currentSlide) {
+          slide.classList.add('active');
+        } else if (idx < currentSlide) {
+          slide.classList.add('prev');
+        }
+      });
+
+      dots.forEach((dot, idx) => {
+        dot.classList.toggle('active', idx === currentSlide);
+      });
+
+      // 更新頂部 Graph Minimap 高亮狀態
+      navPills.forEach((pill, idx) => {
+        pill.classList.toggle('active', idx === currentSlide);
+      });
+
+      const progress = ((currentSlide + 1) / totalSlides) * 100;
+      progressBar.style.width = progress + '%';
+      slideCounter.textContent = `${currentSlide + 1} / ${totalSlides}`;
+
+      prevBtn.disabled = currentSlide === 0;
+      nextBtn.disabled = currentSlide === totalSlides - 1;
+    }
+
+    function nextSlide() {
+      if (currentSlide < totalSlides - 1) {
+        currentSlide++;
+        updateSlide();
+      }
+    }
+
+    function prevSlide() {
+      if (currentSlide > 0) {
+        currentSlide--;
+        updateSlide();
+      }
+    }
+
+    function goToSlide(idx) {
+      currentSlide = idx;
+      updateSlide();
+    }
+
+    // 鍵盤控制支援
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'ArrowRight' || e.key === ' ' || e.key === 'PageDown') {
+        e.preventDefault();
+        nextSlide();
+      } else if (e.key === 'ArrowLeft' || e.key === 'PageUp') {
+        e.preventDefault();
+        prevSlide();
+      } else if (e.key === 'Home') {
+        e.preventDefault();
+        goToSlide(0);
+      } else if (e.key === 'End') {
+        e.preventDefault();
+        goToSlide(totalSlides - 1);
+      }
+    });
+
+    // 手機與觸控螢幕左右滑動
+    let startX = 0;
+    document.addEventListener('touchstart', (e) => {
+      startX = e.touches[0].clientX;
+    });
+
+    document.addEventListener('touchend', (e) => {
+      const endX = e.changedTouches[0].clientX;
+      if (startX - endX > 50) nextSlide();
+      if (endX - startX > 50) prevSlide();
+    });
+
+    updateSlide();
+  </script>
+</body>
+</html>
